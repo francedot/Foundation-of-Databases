@@ -1,0 +1,12 @@
+
+CREATE TRIGGER PUNTO_D
+NO CASCADE BEFORE INSERT ON E3
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN (EXISTS(SELECT *
+			 FROM E1
+			 WHERE N.K1R = E1.K1
+			 AND E1.TIPO = 2
+			 AND E1.B1 IS NULL))
+SIGNAL SQLSTATE '70001' ('L '' istanza di E3 inserita referenzia un istanza di E2 con B non definito!');
+--N-B Si inserisce una tupla, si referenzia un istanza!

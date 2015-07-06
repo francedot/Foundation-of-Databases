@@ -1,0 +1,19 @@
+-- d) per le solo istanze di E2, esiste una dipendenza
+-- funzionale da A a B;
+
+SELECT NAME
+FROM SYSIBM.SYSTRIGGERS
+WHERE SCHEMA = '09050944';
+
+DROP TRIGGER PUNTO_D;
+
+CREATE TRIGGER PUNTO_D
+NO CASCADE BEFORE INSERT ON E1
+REFERENcING NEW AS N
+FOR EACH ROW
+WHEN( N.TIPO2 = 1 AND EXISTS(SELECT *
+							 FROM E1
+							 WHERE E1.TIPO2 = 2
+							 AND E1.A = N.A
+							 AND E1.B <> N.B) )
+SIGNAL SQLSTATE '70001' ('Violata la dipendenza funzionale A-->B su istanze di E2!');

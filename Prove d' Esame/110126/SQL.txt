@@ -1,0 +1,137 @@
+DROP TABLE RICAMBI;
+DROP TABLE AUTO;
+DROP TABLE COMPATIBILI;
+
+CREATE TABLE RICAMBI (
+	CODR CHAR(5) NOT NULL PRIMARY KEY,
+	DESCRIZIONE VARCHAR(30) NOT NULL	);
+
+CREATE TABLE AUTO (
+	MODELLO VARCHAR(10) NOT NULL PRIMARY KEY,
+	CILINDRATA INT NOT NULL,
+	ALIMENTAZIONE VARCHAR(20) NOT NULL,
+	PREZZOAUTO INT NOT NULL			);
+
+CREATE TABLE COMPATIBILI (
+	CODR CHAR(5) NOT NULL REFERENCES RICAMBI,
+	MODELLO VARCHAR(10) NOT NULL REFERENCES AUTO,
+	PREZZO INT NOT NULL,
+	PRIMARY KEY (CODR,MODELLO)		);
+
+INSERT INTO RICAMBI VALUES
+('R0015','fendinebbia'),
+('R0018','fendinebbia'),
+('R0019','fendinebbia'),
+('R0020','indicatore direzione'),
+('R0021','indicatore direzione'),
+('R0030','specchietto retrovisore'),
+('R0031','specchietto retrovisore');
+
+INSERT INTO AUTO VALUES
+('XY905',1000,'benzina',9500),
+('XY905d',1200,'gasolio',11500),
+('XY905m',1000,'metano',9500),
+('AHsport',1600,'benzina',18500),
+('AHsuper',2200,'gasolio',22500),
+('AHeco',1800,'metano',21000),
+('TXeco',1800,'metano',20500);
+
+INSERT INTO COMPATIBILI VALUES
+('R0018','XY905',1300),
+('R0015','XY905d',1200),
+('R0018','XY905d',1600),
+('R0015','XY905m',800),
+('R0020','XY905m',300),
+('R0015','AHsport',1300),
+('R0020','AHsport',150),
+('R0021','AHsport',200),
+('R0018','AHsuper',1900),
+('R0019','AHsuper',2300),
+('R0015','AHeco',1000),
+('R0019','AHeco',2300),
+('R0015','TXeco',900),
+('R0019','TXeco',2100);
+
+SELECT * FROM RICAMBI;
+SELECT * FROM AUTO;
+SELECT * FROM COMPATIBILI;
+
+-- RICAMBI(CodR,Descrizione);
+
+-- AUTO(Modello,Cilindrata,Alimentazione,PrezzoAuto);
+
+-- COMPATIBILI(CodR,Modello,Prezzo),
+-- CodR references RICAMBI, Modello references AUTO;
+
+-- sia PrezzoAuto che Prezzo sono interi
+-- per ipotesi ogni auto ha almeno un pezzo di ricambio
+
+
+-- 2.1) [2 p.] Le auto i cui pezzi di ricambio costano, ciascuno, non più(<=) del 10% del prezzo
+-- dell'auto
+
+--TUTTE LE AUTO - LE AUTO I CUI PEZZI DI RICAMBIO COSTANO PIU DEL 10% DEL PREZZO DELL' AUTO 
+
+SELECT *
+FROM AUTO A, COMPATIBILI C
+WHERE A.MODELLO = C.MODELLO;
+
+WITH MODELLI_RICAMBI_LESS(MODELLO) AS(
+
+	SELECT A.MODELLO
+	FROM AUTO A
+	EXCEPT
+	SELECT A.MODELLO
+	FROM AUTO A, COMPATIBILI C
+	WHERE A.MODELLO = C.MODELLO
+	AND C.PREZZO > 0.1 * A.PREZZOAUTO
+
+)
+
+SELECT *
+FROM AUTO
+WHERE MODELLO IN(SELECT * FROM MODELLI_RICAMBI_LESS);
+
+
+-- 2.2) [3 p.] La fascia di prezzo delle auto (1-10000, 10001-20000, ecc.) che ha il maggior
+-- numero di modelli a metano
+
+-- Bonus di 1/2 punto per la formattazione dell'output con minimo e massimo dei prezzi delle
+-- fasce
+
+SELECT A.PREZZOAUTO
+FROM AUTO A
+WHERE UPPER(A.ALIMENTAZIONE) LIKE 'METANO';
+
+WITH FASCIA_NUMMODMET(FASCIA, NUM_MOD_MET) AS(
+
+	SELECT (10000 * (A.PREZZOAUTO / 10000) + 1) CONCAT '-' CONCAT (10000 * (A.PREZZOAUTO / 10000) + 10000), COUNT(*)
+	FROM AUTO A
+	WHERE UPPER(A.ALIMENTAZIONE) LIKE 'METANO'
+	GROUP BY (A.PREZZOAUTO / 10000)
+
+)
+
+SELECT FASCIA, NUM_MOD_MET AS MAX_MOD_MET
+FROM FASCIA_NUMMODMET
+WHERE NUM_MOD_MET = (SELECT MAX(NUM_MOD_MET) FROM FASCIA_NUMMODMET);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

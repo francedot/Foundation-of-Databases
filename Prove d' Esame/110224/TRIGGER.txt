@@ -1,0 +1,35 @@
+SELECT NAME
+FROM SYSIBM.SYSTRIGGERS
+WHERE SCHEMA = '09050944';
+
+-- c) un'istanza di E1 non è mai associata, tramite R1 e
+-- R2, a una coppia di istanze (k2,k3) di E2 ed E3 che
+-- sono tra loro associate tramite R3;
+
+DROP TRIGGER PUNTO_C;
+
+CREATE TRIGGER PUNTO_C
+NO CASCADE BEFORE INSERT ON E1
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN (EXISTS(SELECT *
+			 FROM E2, E3
+			 WHERE E2.K2 = N.K2R1
+			 AND E3.K3 = N.K3R2
+			 AND E2.K3R3 = E3.K3))
+SIGNAL SQLSTATE '70001' ('La tupla inserita in E1 referenzia una coppia (K2, K3) collegata dalla relazione R3!');
+
+
+
+
+
+-- CREATE TRIGGER UPDATE_E2
+-- NO CASCADE BEFORE INSERT ON E2
+-- REFERENCING NEW AS N
+-- FOR EACH ROW
+-- WHEN(EXISTS(SELECT *
+			-- FROM E1, E3
+			-- WHERE E1.K1 = N.K1R3
+			-- AND E1.K3R3 = E3.K3
+			-- AND ))
+-- SIGNAL SQLSTATE 'ECC'

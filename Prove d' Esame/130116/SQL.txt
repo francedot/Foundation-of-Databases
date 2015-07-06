@@ -1,0 +1,114 @@
+-- PRODOTTI(ProdID,Categoria,Prezzo);
+
+-- RECLAMI(RID,ProdID,Data,Cliente,Motivo),
+-- ProdID REFERENCES PRODOTTI;
+
+-- ESITI(RID,DataSoluzione,Esito,Rimborso*),
+-- RID REFERENCES RECLAMI;
+
+-- DataSoluzione = la data in cui si e' deciso come trattare il reclamo
+-- Esito = descrive se e come il reclamo è stato accolto
+-- Se Esito = 'RIMBORSO', allora l'attributo Rimborso riporta l'importo
+-- rimborsato al cliente (minore o uguale del prezzo del prodotto),
+-- altrimenti Rimborso è NULL
+-- Prezzo e Rimborso sono di tipo DEC(8,2)
+
+SELECT * FROM PRODOTTI;
+SELECT * FROM RECLAMI;
+SELECT * FROM ESITI;
+
+-- 1.1) [1 p.] I dati dei reclami che sono stati risolti in meno di 30 giorni e che hanno dato luogo a un
+-- rimborso almeno pari all'80% del prezzo del prodotto
+
+SELECT R.*
+FROM RECLAMI R, ESITI E, PRODOTTI P
+WHERE R.RID = E.RID AND P.PRODID = R.PRODID
+AND DAYS(E.DATASOLUZIONE) - DAYS(R.DATA) < 30
+AND E.ESITO = 'RIMBORSO' 
+AND E.RIMBORSO >= 0.8 * P.PREZZO;
+
+-- 2.1) [2 p.] I dati dei prodotti di categoria 'elettrodomestici' di prezzo superiore ai 100 € per cui
+-- esiste ALMENO un reclamo senza esito
+
+--RID E' DI UN RECLAMO SENZA ESITO SE COMPARE IN RECLAMI MA NON IN ESITO
+WITH RECLAMI_SENZA_ESITO(RID,PRODID,DATA,CLIENTE,MOTIVO) AS(
+
+	SELECT *
+	FROM RECLAMI
+	WHERE RID IN (SELECT RID
+				  FROM RECLAMI
+				  EXCEPT
+				  SELECT RID
+				  FROM ESITI)
+					
+)
+
+SELECT P.*
+FROM PRODOTTI P JOIN RECLAMI_SENZA_ESITO R ON (P.PRODID = R.PRODID)
+WHERE UPPER(P.CATEGORIA) LIKE '%ELETTRODOMESTICI%'
+AND P.PREZZO > 100;
+
+-- 2.2) [3 p.] La categoria di prodotti con la massima percentuale di reclami rimborsati, considerando
+-- solo i reclami con esito definito(RID IN ESITI)
+
+WITH RECLAMI_WITH_ESITO_DEF(RID,PRODID,DATA,CLIENTE,MOTIVO) AS(
+
+	SELECT *
+	FROM RECLAMI 
+	WHERE RID IN (SELECT RID FROM ESITI)
+
+),
+
+CAT_NUMRIMBORSI(CATEGORIA, NUMRIMBORSI) AS(
+
+	SELECT P.CATEGORIA, COUNT(*)
+	FROM RECLAMI_WITH_ESITO_DEF R, PRODOTTI P
+	WHERE R.PRODID = P.PRODID
+	GROUP BY P.CATEGORIA
+
+),
+
+CAT_WITH_MAX_RIMB(CATEGORIA) AS(
+
+	SELECT C.CATEGORIA
+	FROM CAT_NUMRIMBORSI C
+	WHERE C.NUMRIMBORSI = (SELECT MAX(NUMRIMBORSI) FROM CAT_NUMRIMBORSI)
+
+)-- A PARITA' DI NUMRIMBORSI, PRELEVO PER ORDINE ALFABETICO
+
+SELECT C1.CATEGORIA
+FROM CAT_WITH_MAX_RIMB C1, CAT_WITH_MAX_RIMB C2
+WHERE C1.CATEGORIA < C2.CATEGORIA;
+
+SELECT CATEGORIA
+FROM CAT_WITH_MAX_RIMB
+ORDER BY CATEGORIA DESC
+FETCH FIRST 1 ROW ONLY;
+	
+	
+
+
+
+
+
+
+WITH RECLAMI_WITH_ESITO_DEF(RID,PRODID,DATA,CLIENTE,MOTIVO) AS (
+
+	SELECT *
+	FROM RECLAMI 
+	WHERE RID IN (SELECT RID FROM ESITI)
+
+)
+
+SELECT *
+FROM RECLAMI_WITH_ESITO_DEF R, PRODOTTI P
+WHERE R.PRODID = P.PRODID;
+
+
+
+
+
+
+
+
+

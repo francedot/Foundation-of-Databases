@@ -1,0 +1,26 @@
+SELECT NAME
+FROM SYSIBM.SYSTRIGGERS
+WHERE SCHEMA = '09050944';
+
+-- c) un'istanza di E1 non è mai associata, tramite le
+-- associazioni R1, R2 e R3, a un'istanza di E1 con B
+-- nullo;
+
+DROP TRIGGER PUNTOC;
+
+CREATE TRIGGER PUNTOC
+NO CASCADE BEFORE INSERT ON E1
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN(EXISTS(SELECT *
+			FROM E2, E3, E1
+			WHERE N.K2R1 = E2.K2
+			AND E2.K3R2 = E3.K3
+			AND E3.K1R3 = E1.K1
+			AND E1.B IS NULL))
+SIGNAL SQLSTATE '70001' ('La tupla di E1 inserita è associata a un altra tupla di E1 con B = NULL');
+
+-- Per garantire il rispetto del vincolo di cui al punto c) va innanzitutto notato che esso può essere violato solo da un
+-- inserimento in E1 (inserendo in E2 una tupla (k2,c,k3), ovviamente non può già esistere in E1 una tupla con valore
+-- K2 = k2, e quindi non si crea alcun ciclo; analogamente per inserimenti in E3).
+-- Pertanto è necessario definire solo il seguente trigger:

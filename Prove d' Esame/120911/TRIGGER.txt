@@ -1,0 +1,25 @@
+-- c) per le solo istanze di E2 che partecipano a R2,
+-- esiste una dipendenza funzionale da C ad A
+-- (tramite R2 e R1);
+
+SELECT NAME
+FROM SYSIBM.SYSTRIGGERS
+WHERE SCHEMA = '09050944';
+
+DROP TRIGGER PUNTO_C;
+
+CREATE TRIGGER PUNTO_C
+NO CASCADE BEFORE INSERT ON E2
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN(N.K3R2 IS NOT NULL AND EXISTS((SELECT *
+									FROM E2, E3 AS E3N, E3 AS E3O, E1 AS E1N, E1 AS E1O
+									WHERE E2.C = N.C
+									AND N.K3R2 = E3N.K3
+									AND E2.K3R2 = E3O.K3
+									AND E3N.K1R1 = E1N.K1
+									AND E3O.K1R1 = E1O.K1
+									AND E1N.A <> E1O.A)) )
+SIGNAL SQLSTATE '70001' ('Violata la dipenza funzionale C-->A!');
+
+--DIPENDENZA FUNZIONALE X-->Y: se t1 e t2 hanno gli stessi valori su X, allora hanno gli stessi valori anche su Y

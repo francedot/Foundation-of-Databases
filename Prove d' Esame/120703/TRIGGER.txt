@@ -1,0 +1,21 @@
+
+SELECT NAME
+FROM SYSIBM.SYSTRIGGERS
+WHERE SCHEMA = '09050944';
+
+--d) per le solo istanze di E2 che partecipano a R23, esiste
+--una dipendenza funzionale da B a C;
+
+DROP TRIGGER PUNTO_D;
+
+CREATE TRIGGER PUNTO_D
+NO CASCADE BEFORE INSERT ON E2
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN( EXISTS(SELECT *
+			 FROM E2, E3 AS E3N, E3 AS E3O
+			 WHERE E2.B = N.B
+			 AND N.K3R23 = E3N.K3 -- QUI SI FERMA SE NULL
+			 AND E2.K3R23 = E3O.K3
+			 AND E3N.C <> E3O.C) )
+SIGNAL SQLSTATE '70001' ('Violata la dipendenza funzionale B --> C!');

@@ -1,0 +1,118 @@
+
+DROP TABLE STUDENTI;
+DROP TABLE CORSI;
+DROP TABLE ESAMI;
+
+CREATE TABLE STUDENTI(
+
+	MATR CHAR(5) NOT NULL PRIMARY KEY,
+	Nome VARCHAR(15) NOT NULL,
+	Cognome VARCHAR(15) NOT NULL,
+	DataNascita DATE NOT NULL
+	
+);
+
+CREATE TABLE CORSI(
+
+	CID CHAR(5) NOT NULL PRIMARY KEY,
+	Nome VARCHAR(15) NOT NULL,
+	Anno DATE NOT NULL,
+	CFU INT NOT NULL
+
+);
+
+CREATE TABLE ESAMI(
+
+	MATR CHAR(5) NOT NULL REFERENCES STUDENTI,
+	CID CHAR(5) NOT NULL REFERENCES CORSI,
+	Data DATE NOT NULL,
+	Voto INT NOT NULL,
+	
+	PRIMARY KEY(MATR, CID)
+
+);
+
+
+-- 2.1) [2 p.] I numeri di matricola degli studenti che hanno sostenuto tutti gli esami dei corsi da 9
+-- CFU prendendo sempre almeno 25
+
+--DIVIDENDO:
+WITH DIVIDENDO(MATR, CID) AS(
+
+	SELECT MATR, CID
+	FROM ESAMI
+	WHERE VOTO >= 25
+
+),
+
+DIVISORE(CID) AS(
+
+	SELECT CID
+	FROM CORSI
+	WHERE CFU = 9
+
+)
+
+SELECT S.MATR
+FROM STUDENTI S
+WHERE NOT EXISTS(SELECT *
+				 FROM DIVISORE D
+				 WHERE NOT EXISTS(SELECT *
+								  FROM DIVIDENDO D1
+								  WHERE D1.CID = D.CID
+								  AND D1.MATR = S.MATR));
+
+--SENZA DIVISIONE!
+--BASTA RAGGRUPPARE ESTERNAMENTE PER MATRICOLA PRENDENDO
+--SOLO I GRUPPI CHE HANNO SOSTENUTO N_9_CREDITI ESAMI!
+SELECT E.MATR
+FROM CORSI C, ESAMI E
+WHERE E.CID = C.CID
+AND C.CFU = 9
+AND E.VOTO >= 25
+GROUP BY E.MATR
+HAVING COUNT(*)=( SELECT COUNT(*)
+			   	  FROM CORSI C1
+			   	  WHERE C1.CFU = 9)
+								  
+-- STUDENTI(MATR,Nome,Cognome,DataNascita);
+
+-- CORSI(CID,Nome,Anno,CFU);
+
+-- ESAMI(MATR,CID,Data,Voto),
+-- MATR REFERENCES STUDENTI,
+-- CID REFERENCES CORSI;
+--
+-- Voto ha valori compresi tra 18 e 31 (31 = 30 e lode)
+-- CFU e' un intero positivo
+								  
+-- 2.2) [3 p.] Per ogni anno di corso, i numeri di matricola degli studenti che, negli esami di
+-- quell'anno, hanno la più alta media dei voti
+
+WITH ANNO_MATR_MEDIA(ANNO, MATR, MEDIA) AS(
+
+	SELECT C.ANNO, E.MATR, AVG(E.VOTO)
+	FROM CORSI C, ESAMI E
+	WHERE C.CID = E.CID
+	GROUP BY C.ANNO, E.MATR
+
+)
+
+SELECT A.*
+FROM ANNO_MATR_MEDIA A
+WHERE A.MEDIA = (SELECT MAX(A1.MEDIA)
+			     FROM ANNO_MATR_MEDIA A1
+			     WHERE A1.ANNO = A.ANNO);
+
+--ANDAVA BENE ANCHE CON >= ALL!
+
+
+
+
+
+
+
+
+
+
+

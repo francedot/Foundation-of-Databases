@@ -1,0 +1,19 @@
+SELECT NAME
+FROM SYSIBM.SYSTRIGGERS
+WHERE SCHEMA = '09050944';
+
+-- d) le istanze di E2 identificate esternamente
+-- dalla stessa istanza di E1 hanno valori di B
+-- la cui somma non può superare 100;
+
+DROP TRIGGER PUNTOD;
+
+CREATE TRIGGER PUNTOD
+NO CASCADE BEFORE INSERT ON E2
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN(100 < N.B + (SELECT SUM(E2.B)
+				  FROM E2
+				  WHERE N.K1R1 = E2.K1R1))
+SIGNAL SQLSTATE '70001' ('L'' istanza di E2 inserita referenzia lo stesso valore di chiave
+						  di E1 di altre istanze di E2 : per cui la somma dei loro B è > 100!');

@@ -1,0 +1,35 @@
+SELECT NAME
+FROM SYSIBM.SYSTRIGGERS
+WHERE SCHEMA = '09050944';
+
+DROP TRIGGER E2_R2_E4;
+DROP TRIGGER PUNTOE;
+
+CREATE TRIGGER E2_R2_E4
+NO CASCADE BEFORE INSERT ON E1   -->è LUI CHE REFERENZIA TRAMITE K3R2
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN (N.TIPO = 2 AND NOT EXISTS(SELECT *
+								FROM E3
+								WHERE N.K3R2 = E3.K3
+								AND E3.TIPO = 4))
+SIGNAL SQLSTATE '70001' ('L'' istanza di E2 inserita deve referenziare tramite R2 un istanza di E4');
+								
+-- e) un'istanza di E2 non può referenziare tramite R1
+-- un'istanza di E4;
+
+-- Un istanza di E2 (che ora è un istanza particolare di E1), non può referenziare
+-- tramite R1 (quindi tramite K1 = K1E1) un istanza di E4 che ora è una particolare
+-- istanza di E3
+
+CREATE TRIGGER PUNTOE
+NO CASCADE BEFORE INSERT ON R1
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN (EXISTS(SELECT *
+			 FROM E1, E3
+			 WHERE E1.K1 = N.K1E1
+			 AND E1.TIPO = 2
+			 AND E3.K3 = N.K3E3
+			 AND E3.TIPO = 4))
+SIGNAL SQLSTATE '70002' ('E2 non può referenziare tramite R1 un istanza di E4');

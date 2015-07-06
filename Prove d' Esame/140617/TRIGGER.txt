@@ -1,0 +1,24 @@
+SELECT NAME
+FROM SYSIBM.SYSTRIGGERS
+WHERE SCHEMA = '09050944';
+
+CREATE TRIGGER PUNTO_C
+NO CASCADE BEFORE INSERT ON R1
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN (N.E IS NULL AND EXISTS(SELECT *
+							 FROM E1
+							 WHERE N.K1 = E1.K1
+							 AND E1.TIPO = 2))
+SIGNAL SQLSTATE '70001' ('La tupla inserita ha un valore di E non definito nonostante
+						  partecipi alla relazione un istanza di E2!');
+						  
+CREATE TRIGGER PUNTO_D
+NO CASCADE BEFORE INSERT ON E1
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN (EXISTS(SELECT *
+			 FROM E1
+			 WHERE E1.A = N.A
+			 AND E1.B <> N.B))
+SIGNAL SQLSTATE '70002' ('La tupla inserita viola la dip. funzionale A-->B!');

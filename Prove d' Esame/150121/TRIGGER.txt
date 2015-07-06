@@ -1,0 +1,72 @@
+SELECT NAME
+FROM SYSIBM.SYSTRIGGERS
+WHERE SCHEMA = '09050944';
+
+--PUNTO C
+-- il valore di B è sempre definito se la relativa istanza di E1 è associata a
+-- un’istanza di E2 che partecipa all’associazione R2 con ruolo X;+
+DROP TRIGGER PUNTOC;
+
+CREATE TRIGGER PUNTOC
+NO CASCADE BEFORE INSERT ON E1
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN (N.B IS NULL AND EXISTS(SELECT *
+						     FROM E2
+			                 WHERE N.K2R1 = E2.K2))
+SIGNAL SQLSTATE '70001' ('Valore di B deve essere non nullo se K2R1 referenzia K2!');
+
+--N.B ANCHE FUORI DA QUERY!(VICINO EXISTS)
+
+--PUNTO D
+-- Per ogni istanza di E2, il valore di C è almeno pari alla somma dei valori di A delle istanze di
+-- E1 a essa associate;
+DROP TRIGGER PUNTOD;
+
+CREATE TRIGGER PUNTOD
+NO CASCADE BEFORE INSERT ON E1
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN (N.A + (SELECT SUM(A)
+			 FROM E1
+			 WHERE E1.K2R1 = N.K2R1) > (SELECT C
+										FROM E2
+										WHERE N.K2R1 = E2.K2)
+	 OR N.A > (SELECT C
+		       FROM E2
+			   WHERE N.K2R1 = E2.K2)
+	 )							
+SIGNAL SQLSTATE '70002' ('Il valore di A e'' troppo grande!');
+
+--VARIANTE CON EXISTS
+
+CREATE TRIGGER PUNTOD
+NO CASCADE BEFORE INSERT ON E1
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN EXISTS (SELECT *
+			 FROM E2
+			 WHERE N.K2R1 = E2.K2
+			 AND E2.C < N.A + (SELECT SUM(E1.A) --OCCHIO A SPECIFICARE ANCHE IL SUFFISSO PERCHE' ANCHE N HA ATTRIBUTO A
+						       FROM E1
+							   WHERE E2.K2 = E1.K2R1)
+			 OR E2.C < N.A)
+SIGNAL SQLSTATE '70002' ('Il valore di A e'' troppo grande!');
+-- IN QUESTO MODO NON RIPETO UNA QUERY PER C!
+
+
+
+
+
+
+
+
+
+
+CREATE TRIGGER PUNTOD
+NO CASCADE BEFORE INSERT ON E2
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN (N.C < (SELECT SUM(A)
+		     FROM E1
+		     WHERE E1.K2R1 = N.K2))

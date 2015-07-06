@@ -1,0 +1,40 @@
+DROP TRIGGER UNIQUE_K1R2;
+
+SELECT NAME
+FROM SYSIBM.SYSTRIGGERS
+WHERE SCHEMA = '09050944';
+
+--un'istanza di E1 che partecipa a R1 con il ruolo X
+-- non può referenziare, tramite il ruolo Y, un'istanza
+-- di E2 con C > 10;
+
+CREATE TRIGGER C_NGT_10
+NO CASCADE BEFORE INSERT ON R1
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN (EXISTS(SELECT * 
+			 FROM E1
+			 WHERE E1.K1 = N.K1Y
+			 AND E1.C IS NOT NULL
+			 AND E1.C > 10))
+SIGNAL SQLSTATE '70000' ('Vincolo punto d non soddisfatto!');
+
+
+
+
+
+
+
+
+-- TRIGGER PER UNIVOCITA' DI K1R2
+-- CREATE TRIGGER UNIQUE_K1R2
+-- NO CASCADE BEFORE INSERT ON E1
+-- REFERENCING NEW AS NEWE
+-- FOR EACH ROW
+-- WHEN (EXISTS(SELECT * FROM E1 WHERE E1.K1R2 = NEWE.K1R2))
+-- SIGNAL SQLSTATE '70000' ('Valore di K1R2 già presente in E1!');
+
+-- BLOCCATO
+-- INSERT INTO E1(K1, A, B, TIPO, C, D, K1R2)
+-- VALUES (1, 2, 3, 2, 3, 3, 1),
+       -- (2, 2, 3, 2, 3, 2, 1);

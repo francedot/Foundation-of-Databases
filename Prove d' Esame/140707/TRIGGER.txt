@@ -1,0 +1,23 @@
+--UNICITA' DI B!
+CREATE TRIGGER UNIQUE_B
+NO CASCADE BEFORE INSERT ON E1
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN (EXISTS(SELECT *
+			 FROM E1
+			 WHERE N.B = E1.B))	--SE NULL, NULL != NULL --> CONDIZIONE SU TIPO FACOLTATIVA
+SIGNAL SQLSTATE '70001' ('Esiste già in E2 un valore di B!')
+
+-- d) un'istanza di E2 può essere associata tramite R2 a
+-- un'istanza di E3 solo se i valori di A e C sono diversi;
+
+CREATE TRIGGER PUNTO_D
+NO CASCADE BEFORE INSERT ON E1
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN (EXISTS(SELECT *
+			 FROM E3
+			 WHERE N.K3R2 = E3.K3
+			 AND N.A = E3.C))
+SIGNAL SQLSTATE '70002' ('La tupla inserita in E1 associa tramite R1 un istanza di E2
+						  a un istanza di E3 con A = C!');

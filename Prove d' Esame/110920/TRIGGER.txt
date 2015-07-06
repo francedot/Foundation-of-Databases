@@ -1,0 +1,16 @@
+-- d) un'istanza di E1 non è mai associata, tramite il ruolo X di R, a istanze
+-- di E2 con C < 20;
+
+--NON DEVE ESISTERE 
+
+CREATE TRIGGER PUNTOD
+NO CASCADE BEFORE INSERT ON E1
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN (N.TIPO = 1 AND EXISTS(SELECT *
+					        FROM E1, E2
+							WHERE N.K1Y = E1.K1
+							AND E1.TIPO = 2
+							AND E1.K1 = E2.K1E2
+							AND E2.C < 20))
+SIGNAL SQLSTATE '70001' ('PUNTO DI VIOLATO');

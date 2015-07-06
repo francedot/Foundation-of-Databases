@@ -1,0 +1,33 @@
+-- d) un'istanza di E3 può essere associata tramite R a
+-- un'istanza di E2 solo se il valore di B è definito;
+
+SELECT NAME
+FROM SYSIBM.SYSTRIGGERS
+WHERE SCHEMA = '09050944';
+
+DROP TRIGGER PUNTO_D_INS;
+DROP TRIGGER PUNTO_D_UPD;
+
+CREATE TRIGGER PUNTO_D_INS
+NO CASCADE BEFORE INSERT ON E3
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN (EXISTS(SELECT * 
+			 FROM E1
+			 WHERE E1.K1 = N.K1R
+			 AND E1.TIPO2 = 1
+			 AND E1.B1 IS NULL))-- TANTO SE UNO E' NULL LO E' ANCHE L'ALTRO!
+SIGNAL SQLSTATE '70001' ('La tupla inserita referenzia una tupla di E2 con B non definito!');
+
+CREATE TRIGGER PUNTO_D_UPD
+NO CASCADE BEFORE UPDATE ON E3
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN (EXISTS(SELECT * 
+			 FROM E1
+			 WHERE E1.K1 = N.K1R
+			 AND E1.TIPO2 = 1
+			 AND E1.B1 IS NULL))
+SIGNAL SQLSTATE '70001' ('La tupla modificata ora referenzia una tupla di E2 con B non definito!');
+
+

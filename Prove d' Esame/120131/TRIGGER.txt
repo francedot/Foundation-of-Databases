@@ -1,0 +1,62 @@
+
+SELECT NAME
+FROM SYSIBM.SYSTRIGGERS
+WHERE SCHEMA = '09050944';
+
+DROP TRIGGER BE2_REF_E2;
+
+CREATE TRIGGER BE2_REF_E2
+NO CASCADE BEFORE INSERT ON BE2
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN ( NOT EXISTS(SELECT *
+			      FROM E1
+				  WHERE E1.TIPO2 = 2
+				  AND N.K1B = E1.K1) )
+SIGNAL SQLSTATE '70001' ('La tupla inserita in BE2 non referenzia un istanza valida di E2!');
+
+
+-- d) un'istanza di E2 non è mai associata, tramite R1 e
+-- R2, a istanze di E2 che hanno almeno un valore
+-- B > 10;
+
+DROP TRIGGER PUNTO_D_E1;
+
+CREATE TRIGGER PUNTO_D_E1
+NO CASCADE BEFORE INSERT ON E1
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN(N.TIPO2 = 1 AND EXISTS (SELECT *
+							 FROM E1, BE2	-- E1 SUPERFLUO?!
+							 WHERE N.K1R1R2 = E1.K1
+							 AND E1.K1 = BE2.K1B
+							 AND E1.TIPO2 = 1
+							 AND BE2.B > 10))
+SIGNAL SQLSTATE '70002' ('La tupla inserita in E2 referenzia una tupla di E2 con B> 10!');
+
+DROP TRIGGER PUNTO_D_BE2;
+
+CREATE TRIGGER PUNTO_D_BE2
+NO CASCADE BEFORE INSERT ON BE2
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN (N.B > 10 AND EXISTS(SELECT *
+						  FROM E1 AS E1X, E1 AS E1Y
+						  WHERE N.K1B = E1X.K1
+						  AND E1X.TIPO2 = 1
+						  AND E1X.K1R1R2 = E1Y.K1
+						  AND E1Y.TIPO2 = 1))
+SIGNAL SQLSTATE '70003' ('La tupla inserita in B ha B > 10 e referenzia una tupla di E2 che è referenziata
+						  tramite R1 ed R2 da un altra tupla di E!');
+
+
+
+
+
+
+
+
+
+
+
+

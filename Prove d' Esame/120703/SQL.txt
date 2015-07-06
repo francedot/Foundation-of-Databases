@@ -1,0 +1,135 @@
+DROP TABLE RIUNIONI;
+DROP TABLE PRESENZE;
+DROP TABLE ODG;
+
+CREATE TABLE RIUNIONI(
+
+	DATA DATE NOT NULL PRIMARY KEY,
+	PRESIDENTE VARCHAR(20) NOT NULL
+	
+);
+
+CREATE TABLE PRESENZE(
+
+	DATA DATE NOT NULL REFERENCES RIUNIONI,
+	PERSONA VARCHAR(20) NOT NULL,
+	
+	PRIMARY KEY(DATA, PERSONA)
+
+);
+
+CREATE TABLE ODG(
+
+	DATA DATE NOT NULL,
+	PUNTO VARCHAR(20) NOT NULL,
+	TITOLO VARCHAR(20) NOT NULL,
+	ARGOMENTO VARCHAR(20) NOT NULL,
+	RELATORE VARCHAR(20) NOT NULL,
+	
+	FOREIGN KEY(DATA, RELATORE)
+		REFERENCES PRESENZE,
+
+	PRIMARY KEY(DATA, PUNTO)
+		
+);
+
+-- RIUNIONI(Data,Presidente);
+
+-- PRESENZE(Data,Persona),
+-- Data REFERENCES RIUNIONI;
+
+-- ODG(Data,Punto,Titolo,Argomento,Relatore),
+-- Data,Relatore REFERENCES PRESENZE;
+-- ODG = Ordine Del Giorno
+
+-- Presidente, Persona e Relatore sono definiti sullo stesso dominio
+
+--2.1) [2 p.] Per ogni persona, gli argomenti su cui non ha mai relazionato, supponendo che su ogni
+--argomento ci sia stata almeno una relazione
+
+WITH RELATORE_ARGOMENTO(RELATORE, ARGOMENTO) AS(
+
+	SELECT RELATORE, ARGOMENTO
+	FROM ODG
+	GROUP BY RELATORE, ARGOMENTO
+
+)
+
+SELECT R.RELATORE, R.ARGOMENTO
+FROM RELATORE_ARGOMENTO R
+WHERE R.ARGOMENTO NOT IN(SELECT O.ARGOMENTO
+					     FROM ODG O
+					     WHERE O.RELATORE = R.RELATORE);
+
+--IN QUESTO MODO R.ARGOMENTO E' TRA GLI ARGOMENTI CHE NON COMPAIONO PER QUEL RELATORE
+
+--PROF
+
+SELECT DISTINCT P.Persona, O.Argomento
+FROM PRESENZE P, ODG O
+WHERE NOT EXISTS ( SELECT *
+				   FROM ODG O1
+				   WHERE O1.Argomento = O.Argomento
+				   AND O1.Relatore = P.Persona );
+				   
+-- La soluzione consiste nel rimuovere dal prodotto Cartesiano generato
+-- nel blocco esterno le coppie (Persona,Argomento) che si ritrovano in ODG
+
+--la prendo se non esiste in ODG una tupla con stesso argomento per lo stesso relatore!
+
+--2.2) [3 p.] Per ogni argomento, il relatore che lo ha trattato il maggior numero di volte, escludendo
+--dal conteggio le volte che il relatore era anche presidente della riunione
+
+WITH RELATORE_ARGOMENTO_NUMESPOSIZIONI(RELATORE, ARGOMENTO, NUMESPOSIZIONI) AS(
+
+	SELECT RELATORE, ARGOMENTO, COUNT(R.PRESIDENTE) --NULL SE SI TRATTAVA DI UN RELATORE PRESIDENTE! E QUINDI NON LO CONTO
+	FROM ODG O LEFT OUTER JOIN RIUNIONI R ON (O.DATA = R.DATA AND O.RELATORE <> R.PRESIDENTE)			--TESTARE VALORE NULLO TUPLA DANGLING
+	GROUP BY RELATORE, ARGOMENTO
+
+)
+
+SELECT R1.ARGOMENTO, R1.RELATORE
+FROM RELATORE_ARGOMENTO_NUMESPOSIZIONI R1
+WHERE R1.NUMESPOSIZIONI = (SELECT MAX(R2.NUMESPOSIZIONI)
+						   FROM RELATORE_ARGOMENTO_NUMESPOSIZIONI R2
+						   WHERE R2.ARGOMENTO = R1.ARGOMENTO);
+
+
+--PROF
+
+WITH ARGREL (Relatore, Argomento, NumVolte) AS (
+
+	SELECT O.Relatore,O.Argomento, COUNT(*)
+	FROM ODG O, RIUNIONI R
+	WHERE O.Relatore <> R.Presidente
+	AND O.Data = R.Data
+	GROUP BY O.Relatore,O.Argomento
+
+)
+
+SELECT A.Argomento, A.Relatore
+FROM ARGREL A
+WHERE A.NumVolte >= ALL ( SELECT A1.NumVolte
+						  FROM ARGREL A1
+						  WHERE A1.Argomento = A.Argomento );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

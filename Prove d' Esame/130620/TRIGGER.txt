@@ -1,0 +1,13 @@
+
+--Appurato che non ci vogliono Trigger!
+
+-- CREATE TRIGGER PUNTO_C
+-- NO CASCADE BEFORE INSERT ON E1
+-- REFERENCING NEW AS N
+-- FOR EACH ROW
+-- WHEN (EXISTS(SELECT *
+			 -- FROM E3 AS E3R1, E3 AS E3R2
+			 -- WHERE N.K3R1 = E3R1.K3
+			 -- AND N.K3R2 = E3R2.K3 --SE ISTANZA DI E1 E' NULL --> CONDIZIONE NON VIOLATA!
+			 -- AND E3R1.K3 <> E3R2.K3))
+-- SIGNAL SQLSTATE '70001' ('La tupla inserita in E2 associa tra loro la stessa istanza di E3!');

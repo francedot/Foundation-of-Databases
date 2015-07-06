@@ -1,0 +1,36 @@
+
+-- STUDENTI(MATR,Nome,Cognome,DataNascita);
+
+-- CORSI(CID,Nome,Anno,CFU);
+
+-- ESAMI(MATR,CID,Data,Voto),
+-- MATR REFERENCES STUDENTI,
+-- CID REFERENCES CORSI;
+
+-- 2.1) [2 p.] Per ogni studente nato nel 1993 e per ogni anno di corso (CORSI.Anno), il numero
+-- totale di esami sostenuti
+
+
+SELECT S.MATR, C.ANNO, COUNT(*) AS NUM_ESAMI
+FROM STUDENTI S, ESAMI E, CORSI C
+WHERE S.MATR = E.MATR
+AND C.CID = E.CID
+AND YEAR(S.DATANASCITA) = 1993
+GROUP BY S.MATR, C.ANNO;
+
+-- 2.2) [3 p.] Per ogni fascia di CFU totali acquisiti (fascia 0: 0-49 CFU, fascia 1: 50-99 CFU, ecc.) il
+-- relativo numero di studenti nella fascia (es.: fascia 0: 29 studenti, fascia 1: 53 studenti, ecc.)
+
+WITH MATR_CFU(MATR, CFU_ACQ) AS(
+
+	SELECT E.MATR, SUM(C.CFU)
+	FROM ESAMI E, CORSI C
+	WHERE C.CID = E.CID
+	AND E.VOTO >= 18
+	GROUP BY E.MATR
+
+)
+--DA CONTROLLARE SEMPRE SE SERVE CAST IN BASE AL TIPO!
+SELECT ('fascia ' CONCAT (M.CFU_ACQ / 50)) AS FASCIA_CFU_ACQ, COUNT(*) AS NUM_STUDENTI -->NO VALORI NULLI DA CONTEGGIARE!
+FROM MATR_CFU M
+GROUP BY (M.CFU_ACQ / 50);

@@ -1,0 +1,37 @@
+DROP TRIGGER P_KEY_R2;
+DROP TRIGGER PUNTOD;
+
+SELECT NAME
+FROM SYSIBM.SYSTRIGGERS
+WHERE SCHEMA = '09050944'
+ORDER BY NAME;
+
+CREATE TRIGGER P_KEY_R2
+NO CASCADE BEFORE INSERT ON R2
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN(NOT EXISTS(SELECT *
+				FROM E1
+				WHERE N.K1E3 = E1.K1
+				AND E1.TIPO3 = 1))
+SIGNAL SQLSTATE '70001' ('La tupla inserita deve referenziare una istanza di E3!');
+
+-- d) un'istanza di E2 non è mai associata, tramite R1, a
+-- istanze di E3 con C < 20;
+
+CREATE TRIGGER PUNTOD
+NO CASCADE BEFORE INSERT ON E1
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN(N.TIPO2 = 1 AND EXISTS(SELECT *
+							FROM E1
+							WHERE E1.TIPO3 = 1
+							AND N.K1R1 = E1.K1
+							AND E1.C < 20))
+SIGNAL SQLSTATE '70001' ('L'' istanza di E2 inserita referenzia un istanza di E3 tramite R1 con C < 20');
+
+-- Non serve verificare i tipi delle istanze inserite e referenziate perche' 
+--garantiti dai check E2 ed E3 in E1.INFATTI SE NON SI TRATTA DI UN ISTANZA
+--DI E2 K1R1 SARA' NULL E SE NON SI TRATTA DI UN ISTANZA DI E3 C SARA' NULL!
+
+

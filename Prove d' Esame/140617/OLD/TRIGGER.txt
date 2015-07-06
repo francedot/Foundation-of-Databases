@@ -1,0 +1,36 @@
+SELECT NAME
+FROM SYSIBM.SYSTRIGGERS
+WHERE SCHEMA = '09050944';
+
+-- c) l'attributo E di R1 ha un valore sempre definito se
+-- all'associazione partecipa un'istanza di E2;
+
+DROP TRIGGER PUNTOC;
+DROP TRIGGER PUNTOD;
+
+CREATE TRIGGER PUNTOC
+NO CASCADE BEFORE INSERT ON R1
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN(N.E IS NULL AND EXISTS(SELECT *
+							FROM E1
+							WHERE E1.K1 = N.K1
+							AND E1.TIPO = 2))
+SIGNAL SQLSTATE '70001' ('La tupla di R1 inserita referenzia una tupla di E2 e ha E non definito!');
+
+
+-- d) vale la dipendenza funzionale A -> B;
+
+
+CREATE TRIGGER PUNTOD
+NO CASCADE BEFORE INSERT ON E1
+REFERENCING NEW AS N
+FOR EACH ROW
+WHEN(EXISTS(SELECT *
+			FROM E1
+			WHERE E1.A = N.A
+			AND E1.B != N.B))
+SIGNAL SQLSTATE '70002' ('La tupla inserita esiste con quel valore di A ma non vale la dipendenza
+						  funzionale A->B che associa a un valore di A un solo valore di B!');
+						  
+-- se non esiste non fa nulla!(caso iniziale!)
